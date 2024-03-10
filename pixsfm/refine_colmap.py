@@ -75,10 +75,44 @@ class PixSfM:
                 cache_path=cache_path
             )
         ka_data = self.keypoint_adjuster.refine_multilevel(
-                keypoints, feature_manager, graph)
+                keypoints, feature_manager, graph) # ka_data is just log
         del graph
-        return keypoints, ka_data, feature_manager
-
+        return keypoints, ka_data, feature_manager # keypoints are changed, maybe ref to address?
+    
+    
+    def run_ka_and_get_track(self,
+            keypoints: Dict[str, np.ndarray],
+            image_dir: Path,
+            pairs: List[Tuple[str]],
+            matches_scores: Tuple[List[np.ndarray]],
+            cache_path: Optional[Path] = None,
+            feature_manager: Optional[FeatureManager] = None):
+        cache_path = self.resolve_cache_path(cache_path)
+        graph = build_matching_graph(pairs, *matches_scores)
+        
+        
+        
+        
+        track_labels,score_labels,root_labels=self.keypoint_adjuster.get_track_info_from_graph(graph)
+        
+        # * codes to enable TrackNeRF wo doing track keypoint adjustment
+        # return keypoints,None, feature_manager,track_labels,score_labels,root_labels,graph
+        
+        if feature_manager is None:
+            feature_manager = extract.features_from_graph(
+                self.extractor,
+                image_dir,
+                graph,
+                keypoints_dict=keypoints,
+                cache_path=cache_path
+            )
+        ka_data = self.keypoint_adjuster.refine_multilevel(
+                keypoints, feature_manager, graph) # ka_data is just log
+        # del graph
+        return keypoints,ka_data, feature_manager,track_labels,score_labels,root_labels,graph
+   
+    
+    
     def run_ba(
             self,
             reconstruction: pycolmap.Reconstruction,

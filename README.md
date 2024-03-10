@@ -1,5 +1,60 @@
 # Pixel-Perfect Structure-from-Motion
 
+## Notes about modification
+
+This is a modified version by me from the official implementation used by [TrackNeRF](https://github.com/Wayne-Mai/traf_public).
+
+To only perform keypoint adjustment, please prepare the keypoints file as `.h5` as required.
+
+And then check the modified optimization api in `pixsfm/refine_colmap.py` which also returns feature track graph:
+
+```python
+    def run_ka_and_get_track(self,
+            keypoints: Dict[str, np.ndarray],
+            image_dir: Path,
+            pairs: List[Tuple[str]],
+            matches_scores: Tuple[List[np.ndarray]],
+            cache_path: Optional[Path] = None,
+            feature_manager: Optional[FeatureManager] = None):
+        ...
+        return keypoints,ka_data,feature_manager,track_labels,score_labels,root_labels,graph
+```
+
+For a higher level api or simple demo which directly performs keypoint adjustment,check `demo.py`.
+
+
+For usage examples about extracted feature track graph and online feature tracks optimization, check our example in [TrackNeRF](https://github.com/Wayne-Mai/traf_public).
+
+
+```python
+    """source/training/core/base_track_loss.py"""
+    # * track optim
+    @torch.no_grad()
+    def refine_keypoint(self,combi_list,train_data):
+      ...
+      return 
+```
+
+
+Kudos to the authors of PixSfM:
+
+```
+@inproceedings{lindenberger2021pixsfm,
+  author    = {Philipp Lindenberger and
+               Paul-Edouard Sarlin and
+               Viktor Larsson and
+               Marc Pollefeys},
+  title     = {{Pixel-Perfect Structure-from-Motion with Featuremetric Refinement}},
+  booktitle = {ICCV},
+  year      = {2021},
+}
+```
+
+
+
+
+
+
 ### Best student paper award @ [ICCV 2021](http://iccv2021.thecvf.com/)
 
 We introduce a framework that **improves the accuracy of Structure-from-Motion (SfM) and visual localization** by refining keypoints, camera poses, and 3D points using the direct alignment of deep features. It is presented in our paper:

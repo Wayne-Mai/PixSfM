@@ -131,8 +131,8 @@ def features_from_image_list(
                 feature_manager.fset(level_id).emplace(
                     image_name,
                     features.FeatureMap(
-                        feature_map["patches"],
-                        feature_map["keypoint_ids"],
+                        feature_map["patches"], # [1084,16,16,128]
+                        feature_map["keypoint_ids"], # 1084 ids
                         feature_map["corners"],
                         feature_map["metadata"]
                     )

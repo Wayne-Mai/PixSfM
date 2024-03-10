@@ -69,6 +69,10 @@ class PixSfM(PixSfM_colmap):
         }
         return reconstruction, outputs
 
+    def test_read(self,sfm_pairs):
+        pairs = read_image_pairs(sfm_pairs)
+        return pairs
+        
     def refine_keypoints(
             self,
             output_path: Path,
@@ -79,6 +83,14 @@ class PixSfM(PixSfM_colmap):
             cache_path: Optional[Path] = None,
             feature_manager: Optional[FeatureManager] = None):
         keypoints = read_keypoints_hloc(features_path, as_cpp_map=True)
+        
+        # test adjustment behavior
+        # import numpy as np
+        # print(keypoints['mapping/03903474_1471484089.jpg'].shape)
+        # keypoints['mapping/03903474_1471484089.jpg']=np.append(keypoints['mapping/03903474_1471484089.jpg'], [np.array([1071.,569.5])], axis=0)
+        # print("appended")
+        
+        # keypoints['mapping/93341989_396310999.jpg'].shape : N,2
         to_colmap_coordinates(keypoints)
         pairs = read_image_pairs(pairs_path)
         matches_scores = read_matches_hloc(matches_path, pairs)
@@ -91,6 +103,37 @@ class PixSfM(PixSfM_colmap):
         write_keypoints_hloc(output_path, keypoints)
         return keypoints, ka_data, feature_manager
 
+
+    def refine_keypoints_and_get_track(
+            self,
+            output_path: Path,
+            features_path: Path,
+            image_dir: Path,
+            pairs_path: Path,
+            matches_path: Path,
+            cache_path: Optional[Path] = None,
+            feature_manager: Optional[FeatureManager] = None):
+        keypoints = read_keypoints_hloc(features_path, as_cpp_map=True)
+        
+        # test adjustment behavior
+        # import numpy as np
+        # print(keypoints['mapping/03903474_1471484089.jpg'].shape)
+        # keypoints['mapping/03903474_1471484089.jpg']=np.append(keypoints['mapping/03903474_1471484089.jpg'], [np.array([1071.,569.5])], axis=0)
+        # print("appended")
+        
+        # keypoints['mapping/93341989_396310999.jpg'].shape : N,2
+        to_colmap_coordinates(keypoints)
+        pairs = read_image_pairs(pairs_path)
+        matches_scores = read_matches_hloc(matches_path, pairs)
+        cache_path = self.resolve_cache_path(cache_path, output_path.parent)
+        keypoints, ka_data, feature_manager,track_labels,score_labels,root_labels,graph = self.run_ka_and_get_track(
+                keypoints, image_dir, pairs, matches_scores,
+                cache_path=cache_path,
+                feature_manager=feature_manager)
+        to_hloc_coordinates(keypoints)
+        write_keypoints_hloc(output_path, keypoints)
+        return keypoints, ka_data, feature_manager, track_labels,score_labels,root_labels,graph
+    
     def run_reconstruction(
             self,
             output_dir: Path,

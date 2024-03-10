@@ -19,3 +19,9 @@ outputs/
 datasets/*
 # except the demo
 !datasets/sacre_coeur/
+
+ceres-bin/
+pyceres/
+__pycache__
+# we use a local version, remove it in the github
+ceres-solver/

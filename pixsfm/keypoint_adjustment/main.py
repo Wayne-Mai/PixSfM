@@ -110,12 +110,12 @@ class KeypointAdjuster:
                           problem_setup=None):
         if track_labels is None:
             # Label graph
-            track_labels = base.compute_track_labels(graph)
+            track_labels = base.compute_track_labels(graph) # len 10926
         if root_labels is None:
             # score to connected features within same track
-            score_labels = base.compute_score_labels(graph, track_labels)
+            score_labels = base.compute_score_labels(graph, track_labels) # len 10926
             # node within each track with highest score
-            root_labels = base.compute_root_labels(graph, track_labels,
+            root_labels = base.compute_root_labels(graph, track_labels, # len 10926
                                                    score_labels)
 
         levels = self.conf.level_indices if self.conf.level_indices not in \
@@ -136,6 +136,45 @@ class KeypointAdjuster:
 
         return outputs
 
+
+    def get_track_info_from_graph(self,
+               graph: base.Graph):
+        # given constructed matching graph, we shall get tracks info
+        track_labels = base.compute_track_labels(graph) # len 10926
+        # [n1,..n3]->[track1_id,..,track3_id], every node has track id
+        score_labels = base.compute_score_labels(graph, track_labels) # len 10926
+        # [n1,..n3]->nodes pointed by most weighted edges has biggest weights
+        root_labels = base.compute_root_labels(graph, track_labels, # len 10926
+                                                   score_labels)
+        # [n1,..n3]-> nodes with top1 score in track are root, is_root, true / false for each node
+        """
+            structure of Graph:
+                image_name = graph.image_id_to_name[node.image_id]
+                [node,..,node]:
+                    graph.nodes[0]: <FeatureNode <node_idx=0, image_id=0, feature_idx=83, num_matches=2>
+                        graph.nodes[0].out_matches[0]: <Match <node_idx=1, similarity=0.683594>
+            structure of Keypoints:
+                no need?
+                
+            expected result structure:
+                [track_ids...]
+                    track_id: 
+                        list_of_nodes_idx_in_graph:
+                            node:{img_id,feature_id,is_root,img_name}
+                            
+            def sample_tracks(ray_limit=1024):
+                return rays
+                
+            def render_multi_rays():
+                organize it as images: {id:[rays],..} to call less renderer
+                render those images at pixels;
+                fetch corrs and cal loss;
+                
+                
+            todo: add loss module, we can get tracks, but whether refine track is optional
+                for track traverse loss, render rays and get || p_i - p_root ||
+        """   
+        return track_labels,score_labels,root_labels
 
 class FeatureMetricKeypointAdjuster(KeypointAdjuster):
     """
@@ -180,7 +219,7 @@ class FeatureMetricKeypointAdjuster(KeypointAdjuster):
                     problem_setup,
                     to_ctr(self.conf.interpolation))
 
-        if self.conf.split_in_subproblems:
+        if self.conf.split_in_subproblems: # default true
             # Split problem in indepent chunks
             # nodes with same labels are optimized together
             problem_labels, _ = find_problem_labels(
@@ -267,10 +306,11 @@ def build_matching_graph(
     graph = base.Graph()
     scores = scores if scores is not None else [None for _ in matches]
     for (name1, name2), m, s in zip(pairs, matches, scores):
-        graph.register_matches(name1, name2, m, s)
+        graph.register_matches(name1, name2, m, s) # inside binding cpps
     return graph
-
-
+    # name1,name2: image names like: xxx.jpg
+    # m.shape: (578,2); s.shape: (578)
+    
 def extract_patchdata_from_graph(graph: base.Graph) -> Dict[str, List[int]]:
     image_to_keypoint_ids = defaultdict(list)
     for node in graph.nodes:

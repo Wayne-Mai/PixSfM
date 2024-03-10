@@ -20,7 +20,12 @@ def list_h5_names(path):
 
 def read_image_pairs(path) -> List[Tuple[str]]:
     with open(path, "r") as f:
-        pairs = [p.split() for p in f.read().rstrip('\n').split('\n')]
+        contents = f.read()
+        # print(contents)
+        # import chardet
+        # print(chardet.detect(contents)['encoding'])
+        # contents = contents.decode('utf')
+        pairs = [p.split() for p in contents.rstrip('\n').split('\n')]
     return pairs
 
 
@@ -31,7 +36,7 @@ def write_image_pairs(path: Path, pairs: Iterator[Tuple[str]]):
 
 def read_keypoints_hloc(path: Path, names: Optional[Iterator[str]] = None,
                         as_cpp_map: bool = False) -> Dict[str, np.ndarray]:
-    if as_cpp_map:
+    if as_cpp_map: # default here
         keypoint_dict = Map_NameKeypoints()
     else:
         keypoint_dict = {}
@@ -68,3 +73,6 @@ def read_matches_hloc(path: Path, pairs: Iterator[Tuple[str]]
             matches.append(m)
             scores.append(s)
     return matches, scores
+    # pairs[0]: ['mapping/93341989_396310999.jpg', 'mapping/17295357_910...075285.jpg']
+    # matches[0].shape : (578,2)
+    # pairs[0].shape : (478,)

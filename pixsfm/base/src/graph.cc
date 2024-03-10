@@ -154,7 +154,7 @@ std::vector<size_t> ComputeTrackLabels(Graph& graph) {
   for (auto it : edges) {
     size_t node_idx1 = std::get<1>(it);
     size_t node_idx2 = std::get<2>(it);
-
+    // if parent_nodes[idx]=-1, node is root else recursively find the root node idx
     size_t root1 = union_find_get_root(node_idx1, parent_nodes);
     size_t root2 = union_find_get_root(node_idx2, parent_nodes);
 
@@ -164,7 +164,7 @@ std::vector<size_t> ComputeTrackLabels(Graph& graph) {
           images_in_track[root1].begin(), images_in_track[root1].end(),
           images_in_track[root2].begin(), images_in_track[root2].end(),
           std::inserter(intersection, intersection.begin()));
-      if (intersection.size() != 0) {
+      if (intersection.size() != 0) { // can't in same image (set)
         continue;
       }
       // Union-find merging heuristic.
@@ -173,7 +173,7 @@ std::vector<size_t> ComputeTrackLabels(Graph& graph) {
         images_in_track[root2].insert(images_in_track[root1].begin(),
                                       images_in_track[root1].end());
         images_in_track[root1].clear();
-      } else {
+      } else { // can we query the query match score to decide which one should be the correspondence ?
         parent_nodes[root2] = root1;
         images_in_track[root1].insert(images_in_track[root2].begin(),
                                       images_in_track[root2].end());
@@ -204,7 +204,7 @@ std::vector<size_t> ComputeTrackLabels(Graph& graph) {
 
   return track_labels;
 }
-
+// [n1,..n3]->[track1_id,..,track3_id], every node has track id
 std::vector<double> ComputeScoreLabels(Graph& graph,
                                        std::vector<size_t>& track_labels) {
   const size_t n_nodes = graph.nodes.size();
@@ -221,7 +221,7 @@ std::vector<double> ComputeScoreLabels(Graph& graph,
   }
   return score_labels;
 }
-
+// [n1,..n3]->nodes pointed by most weighted edges has biggest weights
 std::vector<bool> ComputeRootLabels(Graph& graph,
                                     std::vector<size_t> track_labels,
                                     std::vector<double> score_labels) {
@@ -247,14 +247,14 @@ std::vector<bool> ComputeRootLabels(Graph& graph,
     if (has_root[track_labels[node_idx]]) {
       continue;
     }
-
+    // since we sort score arr, large score node will become root at first
     is_root[node_idx] = true;
     has_root[track_labels[node_idx]] = true;
   }
 
   return is_root;
 }
-
+// [n1,..n3]-> nodes with top1 score in track are root 
 std::vector<std::pair<size_t, size_t>> CountEdgesAB(
     Graph& graph, const std::vector<size_t>& track_labels,
     const std::vector<bool> is_root) {
